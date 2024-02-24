@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for file in *.pcx
+do
+  tname=$(basename "$file" .pcx)
+  
+  echo "#EXEC TEXTURE IMPORT FILE=\"Textures\\$1\\$file\" NAME=$tname GROUP=$1"
+done
