@@ -46,7 +46,11 @@ Things fixed in this release :
    spawn points. 
    This way we will hopefully still get the same ratio of gates even if there 
    are not enough spawn points for all the specified gates.
-	
+
+9) If a level is entered with no botpath points (that are used as gate / boss
+   spawn points), then the level is ended as soon as it is started.	This is
+   better behavior than entering a level that has no gates and no bosses, 
+   especially if the server doesn't have map vote.
 
 If you wish to re-build the release, clone this repository into your Unreal 
 Tournament root directory, then from a command or terminal window change to 

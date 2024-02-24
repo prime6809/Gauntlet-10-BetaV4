@@ -533,7 +533,7 @@ function MakeBoss(int bossnum)
 
 	// Since we set BossesAlive to zero before spawning bosses, it may be less than zero
 	// if any of the bosses have been killed immediately on spawning e.g. by telefragging,
-	// environmental dangers. So we accont for this here. 
+	// environmental dangers. So we account for this here. 
 	BossesAlive = BossesAlive + BossesSpawned;
 	BroadcastLocalizedMessage( class'BossGateSpawned',0);
 	bSpawnedBoss = true;
@@ -635,6 +635,11 @@ function StartMatch()
 {
 	super.StartMatch();
 	log("GAME START");
+
+	if (numpoints ==0)
+	{
+		EndGame("No spawn points!");
+	}
 }
 
 
@@ -645,17 +650,17 @@ function EndGame( string Reason )
 	log("Reason:"@Reason);
 
 	if ( reason == "timelimit" )
-		{
-			// You Lost!
-			Teams[0].score= -1;
-			log(MessageGameEndLose);
-			StatisticsManager.GameEnded(false);
-		}
+	{
+		// You Lost!
+		Teams[0].score= -1;
+		log(MessageGameEndLose);
+		StatisticsManager.GameEnded(false);
+	}
 	else
-		{
-			log(MessageGameEndWin);
-			StatisticsManager.GameEnded(true);
-		}
+	{
+		log(MessageGameEndWin);
+		StatisticsManager.GameEnded(true);
+	}
 
 	log("===============================================================");
 	super.EndGame(Reason);
@@ -691,19 +696,13 @@ function timer()
 
 function bosskilled()
 {
-	log("bosskilled:Start BossesAlive="@BossesAlive);
 	BossesAlive--;
 	u4egreplicationinfo(gamereplicationinfo).BossesAlive = BossesAlive;
-	log("bosskilled:BossesAlive="@BossesAlive);
-	log("bosskilled:bSpawnedBoss="@bSpawnedBoss);
 	
 	// Only end the game *IF* the bosses have finished spawning, this prevents
 	// a boss being killed whilst spawning from ending the game prematurely.
 	if (( BossesAlive <= 0 ) && (bSpawnedBoss == true))
 		endgame("teamscorelimit");
-	
-	log("bosskilled:Exit");
-	log(" ");
 }
 
 function MonsterKilled(int Value, pawn Killer, scriptedpawn Victim)

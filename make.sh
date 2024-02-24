@@ -12,3 +12,8 @@ then
 fi 
 
 ./ucc-bin make ini=../Gauntlet-10-BetaV4/make.ini -nohomedir
+
+if [ -f Gauntlet-10-BetaV4.u ]
+then
+  cp Gauntlet-10-BetaV4.u ../Gauntlet-10-BetaV4/bin
+fi
