@@ -27,6 +27,7 @@ var() globalconfig int smallmax,medmax,bigmax,hugemax,giantmax;
 var() globalconfig int smallallow[5],medallow[5],bigallow[5],hugeallow[5],giantallow[5];
 var() globalconfig bool bBossRegen;
 var() globalconfig int regenamount;
+var() bool bMaxMode;
 
 // After monster spawn from their gateway allow them to roam arround looking for trouble
 var() globalconfig bool AllowRoaming;
@@ -45,6 +46,7 @@ var int bossinithealth[4];
 var bool bLevelGatesSet;
 var pathnode levelNodes[NoLevelNodes];
 var ENBool NodeTaken[NoLevelNodes];
+var bool bAllPointsFull;
 
 var GauntletStatistics StatisticsManager;
 
@@ -64,6 +66,19 @@ replication
 	// Things the server should send to the client.
 	reliable if ( Role == ROLE_Authority )
 		StatisticsManager;
+}
+
+function PlayStartUpMessage(PlayerPawn NewPlayer)
+{
+	// Call startup from teamgameplus
+	Super.PlayStartUpMessage(NewPlayer);
+
+	//log("u4egauntlet:PlayStartUpMessage, numpoints="@numpoints);
+
+	if (numpoints ==0)
+	{
+		NewPlayer.SetProgressMessage("Warning: No spawn points, level will end as soon as it begins.",7);
+	}
 }
 
 ///////////////////////////// Borrowed From SiegeXtreme LOL /////////////////////////////////////////////
@@ -113,7 +128,7 @@ function gateways getgate(class<gateways> myGate)
 {
 	local int myRand;
     local gateways g;
-    local bool bSpotTaken;
+//    local bool bSpotTaken;
 	local SymTree Tree;
 	local vector NewLocation;
 	local PathNode PN;
@@ -181,6 +196,10 @@ function gateways getgate(class<gateways> myGate)
 
 				g = spawn(myGate,,,levelnodes[MySpot].location);
 			}
+			else
+			{
+				bAllPointsFull=True;
+			}
 		}
 		
 		return g;
@@ -200,39 +219,42 @@ function setupgates(class<gateways> thegate, int bob)
 	j = 0;
 
 	switch (bob)
-		{
-			case 0:
-				spawnrate = smallspawn;
-				health = smallhealth;
-				maxmonsters = smallmax;
+	{
+		case 0:
+			spawnrate = smallspawn;
+			health = smallhealth;
+			maxmonsters = smallmax;
 
-				for ( i = 0; i < 5; i++ )
-					allowedmonster[i] = smallallow[i];
-				break;
-			case 1:
-				spawnrate = medspawn;
-				health = medhealth;
-				maxmonsters = medmax;
+			for ( i = 0; i < 5; i++ )
+				allowedmonster[i] = smallallow[i];
+			break;
 
-				for ( i = 0; i < 5; i++ )
-					allowedmonster[i] = medallow[i];
-				break;
-			case 2:
-				spawnrate = bigspawn;
-				health = bighealth;
-				maxmonsters = bigmax;
+		case 1:
+			spawnrate = medspawn;
+			health = medhealth;
+			maxmonsters = medmax;
 
-				for ( i = 0; i < 5; i++ )
-					allowedmonster[i] = bigallow[i];
-				break;
-			case 3:
-				spawnrate = hugespawn;
-				health = hugehealth;
-				maxmonsters = hugemax;
+			for ( i = 0; i < 5; i++ )
+				allowedmonster[i] = medallow[i];
+			break;
 
-				for ( i = 0; i < 5; i++ )
-					allowedmonster[i] = hugeallow[i];
-				break;
+		case 2:
+			spawnrate = bigspawn;
+			health = bighealth;
+			maxmonsters = bigmax;
+
+			for ( i = 0; i < 5; i++ )
+				allowedmonster[i] = bigallow[i];
+			break;
+
+		case 3:
+			spawnrate = hugespawn;
+			health = hugehealth;
+			maxmonsters = hugemax;
+
+			for ( i = 0; i < 5; i++ )
+				allowedmonster[i] = hugeallow[i];
+			break;
 		}
 
 	spawnedgate = getgate(thegate);
@@ -255,10 +277,7 @@ function PostBeginPlay()
 {
 	local pathnode pn;
 	local botreplicationinfo b;
-//	local int jonbob;
 	local gateways myGate;
-//	local int j;
-//	local Mutator m;
 	local int i;
 	local int maxtotal;
 	local int mingates;
@@ -268,7 +287,8 @@ function PostBeginPlay()
 	local int HugePerLoop;
 	local int GiantPerLoop;
 	local int SpawnLoop;
-	
+	local int SpawnLoopCount;
+		
 	super.postbeginplay();
 
 	//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -325,9 +345,17 @@ function PostBeginPlay()
 			continue;
 	}
 
-	// calculate total gates needed....
-	maxtotal = maxsmall + maxmed + maxbig + maxhuge + maxgiant;
+	// Temp whilst testing....
+	//bMaxMode = True;
 
+	log("bMaxMode="@bMaxMode);
+
+	// calculate total gates needed....
+	if (bMaxMode)
+		maxtotal = NoLevelNodes;
+	else
+		maxtotal = maxsmall + maxmed + maxbig + maxhuge + maxgiant;
+	
 	// Find the lowest gate total
 	mingates = maxsmall;
 	mingates = min(mingates, maxmed);
@@ -346,10 +374,17 @@ function PostBeginPlay()
 	log("minimum gate count: "@mingates);
 	log("SmallPerLoop="@SmallPerLoop@" MedPerLoop="@MedPerLoop@" BigPerLoop="@BigPerLoop@"HugePerLoop="@HugePerLoop@"GiantPerLoop="@GiantPerLoop);
 
+	if (bMaxMode)
+		SpawnLoopCount = maxtotal / mingates;
+	else
+		SpawnLoopCount = mingates;
+
 	// loop over gates, spawning them.
 	if( !bLevelgatesSet )
 	{
-		for ( SpawnLoop = 0; SpawnLoop < mingates ; SpawnLoop++)
+		bAllPointsFull=False;
+		
+		for ( SpawnLoop = 0; SpawnLoop < SpawnLoopCount ; SpawnLoop++)
 		{
 			for ( numsmall = 0; numsmall < SmallPerLoop; numsmall++ )
 				setupgates(class'smallgate',0);
@@ -361,6 +396,12 @@ function PostBeginPlay()
 				setupgates(class'hugegate',3);
 			for ( numgiant = 0; numgiant < GiantPerLoop; numgiant++ )
 				setupgates(class'giantgate',4);
+				
+			if (bAllPointsFull)
+			{	
+				log("all spawn points full, breaking out of spawn loop");
+				break;
+			}
 		}
 	}
 
@@ -902,6 +943,7 @@ defaultproperties
       giantallow(4)=0
       bBossRegen=False
       regenamount=10
+	  bMaxMode=False
       AllowRoaming=False
       SafeLightScale=0.250000
       totalgates=0

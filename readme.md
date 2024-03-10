@@ -52,6 +52,12 @@ Things fixed in this release :
    better behavior than entering a level that has no gates and no bosses, 
    especially if the server doesn't have map vote.
 
+10) Added "Max" mode, the game will spawn as many gates as it possibly can
+   on a level. This is determined by the number of botpath points. The ratios
+   between the gate types are determined from the specified gate types (maxsmall, 
+   maxmed etc). Max mode is *ONLY* enabled if specified by setting bMaxMode=true,
+   note this value is *NOT* saved in the ini file and defaults to false. 	
+
 If you wish to re-build the release, clone this repository into your Unreal 
 Tournament root directory, then from a command or terminal window change to 
 the System (or System64) directory and run 
